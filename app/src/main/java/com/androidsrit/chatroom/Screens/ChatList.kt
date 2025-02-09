@@ -93,7 +93,7 @@ val inProgress = vm.inChatProgress.value
                             horizontalAlignment = Alignment.CenterHorizontally
 
                             ){
-                            Text("No Chats Availaible")
+                            Text("No chats Availaible")
                         }
                     }
                     BottomNavMenu(BottomNavigationItems.CHATLIST, navController)
@@ -144,9 +144,7 @@ fun FAB(
         )
 
     }
-    FloatingActionButton(onClick = {
-        onFabClick
-    },
+    FloatingActionButton(onClick = onFabClick,
         containerColor = MaterialTheme.colorScheme.secondary,
         shape = CircleShape,
         modifier = Modifier.padding(bottom = 40.dp)
