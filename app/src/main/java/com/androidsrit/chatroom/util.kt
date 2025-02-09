@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -19,7 +20,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil3.compose.rememberAsyncImagePainter
 
@@ -80,5 +83,10 @@ fun checkSignedIn(vm: CRViewModel, navController: NavController){
         navController.navigate(DestinationScreen.ChatList.route){ popUpTo(0)}
 
     }
+}
+@Composable
+fun TitleText(txt:String){
+    Text(txt, fontWeight = FontWeight.Bold, fontSize = 35.sp,modifier = Modifier.padding(8.dp))
+
 }
 

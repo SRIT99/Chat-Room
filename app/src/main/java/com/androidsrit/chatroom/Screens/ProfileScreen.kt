@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -18,6 +19,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -54,35 +57,38 @@ fun ProfileScreen(vm:CRViewModel, navController: NavController) {
         var number by rememberSaveable {
             mutableStateOf(userdata?.number?:"")
         }
-        Column {
 
-            ProfileContent(vm = vm,
-                modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(8.dp),
-                name = name,
-                number = number,
-                onNameChange = {name = it},
-                onNumberChange = {number = it},
-                onBack = {
-                        navController.popBackStack()
-                },
-                onSave = {
-
-                        vm.createOrUpdateProfile(
+                Column {
+                        ProfileContent(vm = vm,
+                            modifier = Modifier
+                                .weight(1f)
+                                .verticalScroll(rememberScrollState())
+                                .padding(8.dp),
                             name = name,
-                            number = number
+                            number = number,
+                            onNameChange = { name = it },
+                            onNumberChange = { number = it },
+                            onBack = {
+                                navController.popBackStack()
+                            },
+                            onSave = {
+
+                                vm.createOrUpdateProfile(
+                                    name = name,
+                                    number = number
+                                )
+                            },
+                            onLogout = {
+                                vm.SignIn.value = false
+                                navigateTo(navController, DestinationScreen.Login.route)
+                            }
                         )
-                },
-                onLogout = {
-                    vm.SignIn.value = false
-                    navigateTo(navController, DestinationScreen.Login.route)
+                 BottomNavMenu(BottomNavigationItems.PROFILE, navController)
                 }
-
-            )
-            BottomNavMenu(BottomNavigationItems.PROFILE, navController)
-        }
     }
-}
 
+}
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileContent(vm: CRViewModel,
                    modifier: Modifier,
@@ -95,7 +101,7 @@ fun ProfileContent(vm: CRViewModel,
                    onLogout : ()-> Unit
                    ){
       val  imageUrl = vm.userData.value?.imgUrl
-    Column {
+    Column(modifier){
         Row (modifier = Modifier.fillMaxWidth()
             .padding(8.dp),
             horizontalArrangement = Arrangement.SpaceBetween

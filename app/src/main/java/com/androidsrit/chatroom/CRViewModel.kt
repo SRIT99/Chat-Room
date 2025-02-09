@@ -4,6 +4,7 @@ import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import com.androidsrit.chatroom.Data.ChatData
 import com.androidsrit.chatroom.Data.Events
 import com.androidsrit.chatroom.Data.userData
 import com.androidsrit.chatroom.Data.user_Node
@@ -24,9 +25,12 @@ class CRViewModel @Inject constructor(
 ): ViewModel() {
 
     var inProgress = mutableStateOf(false)
+    var inChatProgress = mutableStateOf(false)
     val eventMutableState = mutableStateOf<Events<String>?>(null)
     var SignIn = mutableStateOf(false)
     val userData = mutableStateOf<userData?>(null)
+    val chats = mutableStateOf<List<ChatData>>(listOf())
+
 
     init {
         //init block here
@@ -177,6 +181,10 @@ class CRViewModel @Inject constructor(
 
         eventMutableState.value = Events(message)
         inProgress.value = false
+
+    }
+
+    fun onAddChat(it: String) {
 
     }
 

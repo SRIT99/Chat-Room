@@ -17,3 +17,17 @@ data class userData(
 
 
 }
+data class ChatData(
+    val chatId : String? = "",
+    val user1: ChatUser = ChatUser(),
+    val user2: ChatUser = ChatUser()
+){
+
+}
+data class ChatUser(
+    var userId: String? = "",
+    var name: String? = "",
+    var imgUrl: String? = "",
+    var number : String? = ""
+
+)
