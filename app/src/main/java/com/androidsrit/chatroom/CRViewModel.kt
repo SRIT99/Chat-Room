@@ -1,10 +1,12 @@
 package com.androidsrit.chatroom
 
+import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.text.isDigitsOnly
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.androidsrit.chatroom.Data.CHATS
 import com.androidsrit.chatroom.Data.ChatData
 import com.androidsrit.chatroom.Data.ChatUser
@@ -12,22 +14,22 @@ import com.androidsrit.chatroom.Data.Events
 import com.androidsrit.chatroom.Data.userData
 import com.androidsrit.chatroom.Data.user_Node
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.auth.User
-import com.google.firebase.firestore.toObject
-import com.google.firebase.storage.FirebaseStorage
-import dagger.hilt.android.lifecycle.HiltViewModel
-import java.util.UUID
 import com.google.firebase.firestore.Filter
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.toObject
 import com.google.firebase.firestore.toObjects
+import dagger.hilt.android.lifecycle.HiltViewModel
+import io.github.jan.supabase.storage.Storage
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class CRViewModel @Inject constructor(
-    val auth : FirebaseAuth,
-    var db : FirebaseFirestore,
-    val storage: FirebaseStorage
-): ViewModel() {
+    val auth: FirebaseAuth,
+    var db: FirebaseFirestore,
+    val storage: Storage,
+    val profileManager: ProfileManager
+) : ViewModel() {
 
     var inProgress = mutableStateOf(false)
     var inChatProgress = mutableStateOf(false)
@@ -50,14 +52,14 @@ class CRViewModel @Inject constructor(
 
     fun SignUp(name: String, number: String, email: String, password: String) {
         inProgress.value = true
-        if(name.isEmpty() || number.isEmpty() || email.isEmpty() || password.isEmpty()){
+        if (name.isEmpty() || number.isEmpty() || email.isEmpty() || password.isEmpty()) {
             handleException(customMessage = "Please fill all the fields")
             return
         }
         inProgress.value = true
         db.collection(user_Node).whereEqualTo("number", number)
             .get().addOnSuccessListener {
-                if(it.isEmpty()){
+                if (it.isEmpty()) {
                     auth.createUserWithEmailAndPassword(email, password).addOnCompleteListener {
                         if (it.isSuccessful) {
                             SignIn.value = true
@@ -67,7 +69,7 @@ class CRViewModel @Inject constructor(
 
                         }
                     }
-                } else{
+                } else {
                     handleException(customMessage = "Number Already Exists")
                     inProgress.value = false
                 }
@@ -83,6 +85,7 @@ class CRViewModel @Inject constructor(
         }
 
     }
+
     fun login(email: String, password: String) {
         if (email.isEmpty() or password.isEmpty()) {
             handleException(customMessage = "Please Fill All Fields")
@@ -90,35 +93,39 @@ class CRViewModel @Inject constructor(
         } else {
             inProgress.value = true
             auth.signInWithEmailAndPassword(email, password).addOnCompleteListener {
-                if(it.isSuccessful){
+                if (it.isSuccessful) {
                     SignIn.value = true
                     inProgress.value = false
                     auth.currentUser?.uid?.let { getUserData(it) }
 
-                }else{
+                } else {
                     handleException(it.exception, customMessage = "Login Failed")
 
                 }
             }
         }
     }
-    fun createOrUpdateProfile(name: String? =null, number: String? = null,  imgUrl: String? = null) {
+
+    fun createOrUpdateProfile(
+        name: String? = null,
+        number: String? = null,
+        imgUrl: String? = null
+    ) {
         var uid = auth.currentUser?.uid
         val UserData = userData(
             userId = uid,
-            userName = name?:userData.value?.userName,
-            number = number?:userData.value?.number,
-            imgUrl = imgUrl?: userData.value?.imgUrl
+            userName = name ?: userData.value?.userName,
+            number = number ?: userData.value?.number,
+            imgUrl = imgUrl ?: userData.value?.imgUrl
         )
-        uid?.let{
+        uid?.let {
             inProgress.value = true
             db.collection(user_Node).document(uid).get().addOnSuccessListener {
-                if(it.exists()){
+                if (it.exists()) {
                     // update user Data
                     db.collection(user_Node).document(uid).set(UserData)
-                    inProgress.value= false
-                }
-                else{
+                    inProgress.value = false
+                } else {
                     db.collection(user_Node).document(uid).set(UserData)
                     inProgress.value = false
                     getUserData(uid)
@@ -133,14 +140,14 @@ class CRViewModel @Inject constructor(
 
     }
 
-     private fun getUserData(uid: String) {
+    private fun getUserData(uid: String) {
         inProgress.value = true
         db.collection(user_Node).document(uid).addSnapshotListener { value, error ->
             if (error != null) {
                 handleException(error, "Cannot Retrive User")
 
             }
-            if(value!=null){
+            if (value != null) {
                 var user = value.toObject<userData>()
                 userData.value = user
                 inProgress.value = false
@@ -152,32 +159,12 @@ class CRViewModel @Inject constructor(
 
     }
 
-    fun uploadProfileImage(uri: Uri) {
-           uploadImage(uri){
-            createOrUpdateProfile(imgUrl = it.toString())
+    fun uploadProfileImage(context: Context, uri: Uri) {
+        viewModelScope.launch {
+            profileManager.uploadProfileImage(context, uri)
         }
-
-
     }
 
-
-
- fun uploadImage(uri: Uri, onSuccess:(Uri)->Unit){
-
-     inProgress.value = true
-      val storageRef = storage.reference
-      val uuid = UUID.randomUUID()
-      val imageRef = storageRef.child("images/$uuid")
-      val uploadTask = imageRef.putFile(uri)
-      uploadTask.addOnSuccessListener {
-          val result = it.metadata?.reference?.downloadUrl
-          result?.addOnSuccessListener(onSuccess)
-          inProgress.value = false
-      }
-          .addOnFailureListener{
-              handleException(it, "Image Upload Failed")
-          }
-  }
 
     fun handleException(exception: Exception? = null, customMessage: String = "") {
         Log.e("LiveChatApp", "handleException", exception)
@@ -191,46 +178,50 @@ class CRViewModel @Inject constructor(
     }
 
     fun onAddChat(number: String) {
-        if(number.isEmpty() or ! number.isDigitsOnly()) {
+        if (number.isEmpty() or !number.isDigitsOnly()) {
             handleException(customMessage = "Number should only contain digits")
-        }else{
-            db.collection(CHATS).where(Filter.or(
-             Filter.and(
-                    Filter.equalTo("user1.number",number),
-                    Filter.equalTo("user2.number",userData.value?.number)
-                ),
-                Filter.and(
-                    Filter.equalTo("user1.number",userData.value?.number),
-                    Filter.equalTo("user2.number",number)
+        } else {
+            db.collection(CHATS).where(
+                Filter.or(
+                    Filter.and(
+                        Filter.equalTo("user1.number", number),
+                        Filter.equalTo("user2.number", userData.value?.number)
+                    ),
+                    Filter.and(
+                        Filter.equalTo("user1.number", userData.value?.number),
+                        Filter.equalTo("user2.number", number)
+                    )
                 )
-            )).get().addOnSuccessListener {
-                if(it.isEmpty){
+            ).get().addOnSuccessListener {
+                if (it.isEmpty) {
                     db.collection(user_Node)
-                        .whereEqualTo("number",number)
+                        .whereEqualTo("number", number)
                         .get()
                         .addOnSuccessListener {
-                            if(it.isEmpty){
+                            if (it.isEmpty) {
                                 handleException(customMessage = "User Not Found")
-                        }else{
-                            val chatPartners = it.toObjects<userData>()[0]
+                            } else {
+                                val chatPartners = it.toObjects<userData>()[0]
                                 val id = db.collection(CHATS).document().id
                                 val chat = ChatData(
                                     chatId = id,
-                                    ChatUser( userId = userData.value?.userId,
+                                    ChatUser(
+                                        userId = userData.value?.userId,
                                         name = userData.value?.userName,
                                         imgUrl = userData.value?.imgUrl,
-                                        number = userData.value?.number),
+                                        number = userData.value?.number
+                                    ),
                                     ChatUser(
                                         userId = chatPartners.userId,
                                         name = chatPartners.userName,
                                         imgUrl = chatPartners.imgUrl,
-                                        number = chatPartners.number)
+                                        number = chatPartners.number
+                                    )
                                 )
                                 db.collection(CHATS).document(id).set(chat)
                             }
-                          }
-                }
-                    else{
+                        }
+                } else {
                     handleException(customMessage = "Chat Already Exists")
                 }
             }
@@ -239,20 +230,19 @@ class CRViewModel @Inject constructor(
 
     }
 
-    fun populateChats(){
+    fun populateChats() {
         inChatProgress.value = true
         db.collection(CHATS).where(
             Filter.or(
                 Filter.equalTo("user1.userId", userData.value?.userId),
                 Filter.equalTo("user2.userId", userData.value?.userId)
             )
-        ).addSnapshotListener{
-            value, error ->
-            if(error!=null){
+        ).addSnapshotListener { value, error ->
+            if (error != null) {
                 handleException(error)
 
             }
-            if (value !=null){
+            if (value != null) {
                 chats.value = value.documents.mapNotNull {
                     it.toObject<ChatData>()
                 }

@@ -89,4 +89,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.coil.compose)
 
+    implementation(libs.storage.kt)
+    implementation(libs.gotrue.kt)
+
 }
