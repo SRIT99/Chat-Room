@@ -19,6 +19,7 @@ import com.androidsrit.chatroom.Screens.ChatList
 import com.androidsrit.chatroom.Screens.LoginScreen
 import com.androidsrit.chatroom.Screens.ProfileScreen
 import com.androidsrit.chatroom.Screens.SignUpScreen
+import com.androidsrit.chatroom.Screens.SingleChatScreen
 import com.androidsrit.chatroom.Screens.StatusScreen
 import com.androidsrit.chatroom.ui.theme.ChatRoomTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -76,6 +77,15 @@ class MainActivity : ComponentActivity() {
             }
             composable(DestinationScreen.Profile.route){
                 ProfileScreen(vm, navController)
+            }
+            composable(DestinationScreen.SingleChat.route){
+                val chatId = it.arguments?.getString("chatId")
+                chatId?.let{
+                    SingleChatScreen(vm, navController, chatId = chatId)
+                }
+
+
+
             }
         }
 //        LoginScreen()

@@ -3,8 +3,11 @@ package com.androidsrit.chatroom
 import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
+import androidx.core.text.isDigitsOnly
 import androidx.lifecycle.ViewModel
+import com.androidsrit.chatroom.Data.CHATS
 import com.androidsrit.chatroom.Data.ChatData
+import com.androidsrit.chatroom.Data.ChatUser
 import com.androidsrit.chatroom.Data.Events
 import com.androidsrit.chatroom.Data.userData
 import com.androidsrit.chatroom.Data.user_Node
@@ -15,6 +18,8 @@ import com.google.firebase.firestore.toObject
 import com.google.firebase.storage.FirebaseStorage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.UUID
+import com.google.firebase.firestore.Filter
+import com.google.firebase.firestore.toObjects
 import javax.inject.Inject
 
 @HiltViewModel
@@ -56,7 +61,7 @@ class CRViewModel @Inject constructor(
                     auth.createUserWithEmailAndPassword(email, password).addOnCompleteListener {
                         if (it.isSuccessful) {
                             SignIn.value = true
-                            createOrUpdateProfile(name, number, email)
+                            createOrUpdateProfile(name, number)
                         } else {
                             handleException(it.exception, customMessage = "SignUp Failed")
 
@@ -70,7 +75,7 @@ class CRViewModel @Inject constructor(
         auth.createUserWithEmailAndPassword(email, password).addOnCompleteListener {
             if (it.isSuccessful) {
                 SignIn.value = true
-                createOrUpdateProfile(name, number, email)
+                createOrUpdateProfile(name, number)
             } else {
                 handleException(it.exception, customMessage = "SignUp Failed")
 
@@ -128,7 +133,7 @@ class CRViewModel @Inject constructor(
 
     }
 
-     fun getUserData(uid: String) {
+     private fun getUserData(uid: String) {
         inProgress.value = true
         db.collection(user_Node).document(uid).addSnapshotListener { value, error ->
             if (error != null) {
@@ -139,6 +144,7 @@ class CRViewModel @Inject constructor(
                 var user = value.toObject<userData>()
                 userData.value = user
                 inProgress.value = false
+                populateChats()
 
             }
 
@@ -184,9 +190,75 @@ class CRViewModel @Inject constructor(
 
     }
 
-    fun onAddChat(it: String) {
+    fun onAddChat(number: String) {
+        if(number.isEmpty() or ! number.isDigitsOnly()) {
+            handleException(customMessage = "Number should only contain digits")
+        }else{
+            db.collection(CHATS).where(Filter.or(
+             Filter.and(
+                    Filter.equalTo("user1.number",number),
+                    Filter.equalTo("user2.number",userData.value?.number)
+                ),
+                Filter.and(
+                    Filter.equalTo("user1.number",userData.value?.number),
+                    Filter.equalTo("user2.number",number)
+                )
+            )).get().addOnSuccessListener {
+                if(it.isEmpty){
+                    db.collection(user_Node)
+                        .whereEqualTo("number",number)
+                        .get()
+                        .addOnSuccessListener {
+                            if(it.isEmpty){
+                                handleException(customMessage = "User Not Found")
+                        }else{
+                            val chatPartners = it.toObjects<userData>()[0]
+                                val id = db.collection(CHATS).document().id
+                                val chat = ChatData(
+                                    chatId = id,
+                                    ChatUser( userId = userData.value?.userId,
+                                        name = userData.value?.userName,
+                                        imgUrl = userData.value?.imgUrl,
+                                        number = userData.value?.number),
+                                    ChatUser(
+                                        userId = chatPartners.userId,
+                                        name = chatPartners.userName,
+                                        imgUrl = chatPartners.imgUrl,
+                                        number = chatPartners.number)
+                                )
+                                db.collection(CHATS).document(id).set(chat)
+                            }
+                          }
+                }
+                    else{
+                    handleException(customMessage = "Chat Already Exists")
+                }
+            }
+
+        }
 
     }
 
+    fun populateChats(){
+        inChatProgress.value = true
+        db.collection(CHATS).where(
+            Filter.or(
+                Filter.equalTo("user1.userId", userData.value?.userId),
+                Filter.equalTo("user2.userId", userData.value?.userId)
+            )
+        ).addSnapshotListener{
+            value, error ->
+            if(error!=null){
+                handleException(error)
+
+            }
+            if (value !=null){
+                chats.value = value.documents.mapNotNull {
+                    it.toObject<ChatData>()
+                }
+                inChatProgress.value = false
+            }
+        }
+    }
 
 }
