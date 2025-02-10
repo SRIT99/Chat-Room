@@ -6,8 +6,7 @@ import androidx.navigation.NavController
 import com.androidsrit.chatroom.CRViewModel
 
 @Composable
-fun SingleChatScreen(vm:CRViewModel, navController: NavController, chatId: String){
+fun SingleStatusScreen(){
 
 
-    Text("Single Chat")
 }

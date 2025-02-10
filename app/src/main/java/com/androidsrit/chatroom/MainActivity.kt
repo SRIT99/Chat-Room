@@ -79,9 +79,9 @@ class MainActivity : ComponentActivity() {
                 ProfileScreen(vm, navController)
             }
             composable(DestinationScreen.SingleChat.route){
-                val chatId = it.arguments?.getString("chatId")
-                chatId?.let{
-                    SingleChatScreen(vm, navController, chatId = chatId)
+                val ChatId = it.arguments?.getString("ChatId")
+                ChatId?.let{
+                    SingleChatScreen(vm, navController, ChatId = ChatId)
                 }
 
 

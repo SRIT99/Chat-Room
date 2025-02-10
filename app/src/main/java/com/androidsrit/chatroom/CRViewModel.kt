@@ -108,7 +108,7 @@ class CRViewModel @Inject constructor(
             userId = uid,
             userName = name?:userData.value?.userName,
             number = number?:userData.value?.number,
-            imgUrl =imgUrl?: "https://www.bing.com/ck/a?!&&p=ec39c05d55c21cc5cc0cc96075409b758cf22c4e87a5ce32cf178e6695232e60JmltdHM9MTczODcxMzYwMA&ptn=3&ver=2&hsh=4&fclid=23e106e5-8a51-6a48-04e5-13b48b576b5d&u=a1L2ltYWdlcy9zZWFyY2g_cT1pbWFnZSUyMGlmJTIwZG9nJkZPUk09SVFGUkJBJmlkPTA4NDZGMzQwMjg5ODFBNUQyQUQyQjI0MjJFQjk3RjBCNTlBOUY1RjY&ntb=1"
+            imgUrl = imgUrl?: userData.value?.imgUrl
         )
         uid?.let{
             inProgress.value = true

@@ -24,6 +24,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -104,11 +105,12 @@ fun commonRow(imgUri: String?, name: String?, onItemClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .height(75.dp)
-            .clickable { onItemClick.invoke() },
+            .clickable { onItemClick.invoke()}
+                .background(Color.LightGray),
         verticalAlignment = Alignment.CenterVertically
     ) {
         commonImage(
-            data = imgUri,
+            data= imgUri,
             modifier = Modifier
                 .padding(8.dp)
                 .size(50.dp)
@@ -117,6 +119,7 @@ fun commonRow(imgUri: String?, name: String?, onItemClick: () -> Unit) {
         )
         Text(
             text = name ?: "---",
+            color = Color.White,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(start = 4.dp)
         )
