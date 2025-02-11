@@ -1,12 +1,10 @@
 package com.androidsrit.chatroom
 
-import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.text.isDigitsOnly
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.androidsrit.chatroom.Data.CHATS
 import com.androidsrit.chatroom.Data.ChatData
 import com.androidsrit.chatroom.Data.ChatUser
@@ -18,17 +16,19 @@ import com.google.firebase.firestore.Filter
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.toObject
 import com.google.firebase.firestore.toObjects
+import com.google.firebase.ktx.Firebase
+import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.ktx.storage
+import com.google.firebase.storage.storage
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.github.jan.supabase.storage.Storage
-import kotlinx.coroutines.launch
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
 class CRViewModel @Inject constructor(
     val auth: FirebaseAuth,
     var db: FirebaseFirestore,
-    val storage: Storage,
-    val profileManager: ProfileManager
+    val storage: FirebaseStorage
 ) : ViewModel() {
 
     var inProgress = mutableStateOf(false)
@@ -159,12 +159,30 @@ class CRViewModel @Inject constructor(
 
     }
 
-    fun uploadProfileImage(context: Context, uri: Uri) {
-        viewModelScope.launch {
-            profileManager.uploadProfileImage(context, uri)
+    fun uploadProfileImage(uri: Uri) {
+        uploadImage(uri) {
+            createOrUpdateProfile(imgUrl = it.toString())
         }
+
+
     }
 
+    fun uploadImage(uri: Uri, onSuccess: (Uri) -> Unit) {
+
+        inProgress.value = true
+        val storageRef = storage.reference
+        val uuid = UUID.randomUUID()
+        val imageRef = storageRef.child("images/$uuid")
+        val uploadTask = imageRef.putFile(uri)
+        uploadTask.addOnSuccessListener {
+            val result = it.metadata?.reference?.downloadUrl
+            result?.addOnSuccessListener(onSuccess)
+            inProgress.value = false
+        }
+            .addOnFailureListener {
+                handleException(it, "Image Upload Failed")
+            }
+    }
 
     fun handleException(exception: Exception? = null, customMessage: String = "") {
         Log.e("LiveChatApp", "handleException", exception)

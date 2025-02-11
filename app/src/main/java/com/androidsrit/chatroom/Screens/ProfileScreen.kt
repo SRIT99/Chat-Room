@@ -149,13 +149,6 @@ fun ProfileContent(
                     unfocusedContainerColor = Color.Transparent,
                     disabledContainerColor = Color.Transparent
                 )
-                /*       ,
-                       trailingIcon = Image(painter = painterResource(id = R.drawable.baseline_edit_24),
-                           null,
-                           modifier = Modifier.clickable {
-                           vm.
-                       } */
-
 
             )
         }
@@ -174,43 +167,34 @@ fun ProfileContent(
     }
 
 }
-
 @Composable
-fun ProfileImage(imgUrl: String?, vm: CRViewModel) {
-    val context = LocalContext.current
+fun ProfileImage(imgUrl : String?, vm:CRViewModel) {
     val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri ->
-        uri?.let {
-            vm.uploadProfileImage(context, it) // Pass context and URI to ViewModel
+        contract = ActivityResultContracts.GetContent())
+    {
+            uri ->
+        uri?.let{
+            vm.uploadProfileImage(uri)
+
         }
     }
-    Box(modifier = Modifier.height(intrinsicSize = IntrinsicSize.Min)) {
+    Box(modifier = Modifier.height(intrinsicSize = IntrinsicSize.Min)){
         Column(
             modifier = Modifier
-                .padding(8.dp)
-                .fillMaxWidth()
-                .clickable {
-
+                .padding(8.dp).fillMaxWidth().clickable{
                     launcher.launch("image/*")
 
                 }, horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Card(
-                shape = CircleShape, modifier = Modifier
-                    .padding(8.dp)
-                    .size(100.dp)
-            ) {
+        ){
+            Card(shape = CircleShape, modifier = Modifier.padding(8.dp).size(100.dp)) {
                 commonImage(data = imgUrl)
             }
             Text(text = "Change Profile Picture")
         }
         val isLoading = vm.inProgress.value
-        if (isLoading) {
+        if(isLoading){
             commonProgressBar()
         }
-
-
     }
 
 

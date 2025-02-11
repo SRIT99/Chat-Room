@@ -7,6 +7,7 @@ plugins {
 //    id("com.android.application")
     id("com.google.dagger.hilt.android")
     alias(libs.plugins.google.gms.google.services)
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.1.10"
 }
 
 android {
@@ -42,6 +43,7 @@ android {
     }
     buildFeatures {
         compose = true
+
     }
 }
 
@@ -59,13 +61,12 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.firestore.ktx)
 
-        implementation(libs.cloudinary.cloudinary.android)
-    implementation(libs.firebase.storage.ktx)
-    implementation(libs.firebase.storage)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.multidex)
+    implementation(libs.firebase.storage)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -88,8 +89,4 @@ dependencies {
     kspTest(libs.hilt.compiler)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.coil.compose)
-
-    implementation(libs.storage.kt)
-    implementation(libs.gotrue.kt)
-
 }
